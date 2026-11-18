@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "components/chat_sidebar.html" import chat_sidebar %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+<div class="chat-layout">
+  {{ chat_sidebar(chats, chat['id'] if chat else None) }}
+
+  <main class="chat-main">
+    {% if chat %}
+      <h2 class="chat-title">{{ chat['title'] }}</h2>
+      {% for m in messages %}
+        <div class="msg msg-{{ m['rol'] }}">{{ m['content'] }}</div>
+      {% else %}
+        <p class="chat-empty">Escribe tu primera pregunta.</p>
+      {% endfor %}
+      {# aquí va el formulario para enviar mensajes #}
+    {% else %}
+      <p class="chat-empty">Crea un chat nuevo para empezar.</p>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Inicio{% endblock %}
+
+
+{% block content %}
+{#
+{% for post in posts %}
+<article class="post">
+  <header>
+    <div>
+      <h1>{{ post['title'] }}</h1>
+      <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
+    </div>
+    {% if g.user['id'] == post['author_id'] %}
+    <a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
+    {% endif %}
+  </header>
+  <p class="body">{{ post['body'] }}</p>
+</article>
+{% if not loop.last %}
+<hr>
+{% endif %}
+{% endfor %}
+#}
+
+<section class="hero">
+  <h1>Resuelve tus dudas de ciberseguridad con un asistente especializado</h1>
+  <p class="lead">
+    CibiWiky responde preguntas sobre amenazas, redes, vulnerabilidades y buenas
+    prácticas usando una base de conocimiento propia.
+  </p>
+  <div class="actions">
+    <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Crear cuenta</a>
+    <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Ya tengo cuenta</a>
+  </div>
+</section>
+
+<section class="info">
+  <div>
+    <h2>Respuestas enfocadas</h2>
+    <p>El asistente consulta documentación de ciberseguridad antes de responder.</p>
+  </div>
+  <div>
+    <h2>Tus chats, guardados</h2>
+    <p>Inicia sesión para conservar tus conversaciones y retomarlas después.</p>
+  </div>
+  <div>
+    <h2>Gratis para estudiantes</h2>
+    <p>Regístrate con tu correo y empieza a preguntar en menos de un minuto.</p>
+  </div>
+</section>
+{% endblock %}
