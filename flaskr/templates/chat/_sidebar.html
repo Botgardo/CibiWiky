@@ -1,0 +1,12 @@
+<aside class="sidebar">
+  <form method="post" action="{{ url_for('chat.new') }}">
+    <button type="submit">+ Nuevo chat</button>
+  </form>
+  <ul>
+    {% for c in chats %}
+      <li class="{{ 'active' if chat and chat['id'] == c['id'] }}">
+        <a href="{{ url_for('chat.view', chat_id=c['id']) }}">{{ c['title'] }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</aside>

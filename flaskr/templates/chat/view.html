@@ -1,23 +1,85 @@
-{% extends "base.html" %}
-{% from "components/chat_sidebar.html" import chat_sidebar %}
+{% extends 'base.html' %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
-<div class="chat-layout">
-  {{ chat_sidebar(chats, chat['id'] if chat else None) }}
+<div class="layout">
+  {% include 'chat/_sidebar.html' %}
 
-  <main class="chat-main">
+  <section class="chat">
     {% if chat %}
-      <h2 class="chat-title">{{ chat['title'] }}</h2>
-      {% for m in messages %}
-        <div class="msg msg-{{ m['rol'] }}">{{ m['content'] }}</div>
-      {% else %}
-        <p class="chat-empty">Escribe tu primera pregunta.</p>
-      {% endfor %}
-      {# aquí va el formulario para enviar mensajes #}
+      <div id="messages">
+        {% for m in messages %}
+          <div class="msg {{ m.role }}">
+            <p>{{ m.content }}</p>
+            {% if m.sources %}
+              <small>Fuentes:
+                {% for s in m.sources %}
+                  <a href="{{ s.url }}" target="_blank" rel="noopener">[{{ s.n }}] {{ s.title }}</a>
+                {% endfor %}
+              </small>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <form id="f">
+        <input id="q" maxlength="2000" autocomplete="off" placeholder="Pregunta sobre OWASP Top 10 2025..." required>
+        <button id="btn">Enviar</button>
+      </form>
+
+      <script>
+        const box = document.getElementById('messages');
+        const form = document.getElementById('f');
+        const input = document.getElementById('q');
+        const btn = document.getElementById('btn');
+
+        function add(role, text, sources = []) {
+          const d = document.createElement('div');
+          d.className = 'msg ' + role;
+          const p = document.createElement('p');
+          p.textContent = text;                 // textContent: evita XSS
+          d.appendChild(p);
+          if (sources.length) {
+            const s = document.createElement('small');
+            s.append('Fuentes: ');
+            sources.forEach(x => {
+              const a = document.createElement('a');
+              a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
+              a.textContent = `[${x.n}] ${x.title} `;
+              s.appendChild(a);
+            });
+            d.appendChild(s);
+          }
+          box.appendChild(d);
+          box.scrollTop = box.scrollHeight;
+        }
+
+        form.addEventListener('submit', async e => {
+          e.preventDefault();
+          const text = input.value.trim();
+          if (!text) return;
+          add('user', text);
+          input.value = '';
+          btn.disabled = true;
+          try {
+            const r = await fetch("{{ url_for('chat.send', chat_id=chat['id']) }}", {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({message: text})
+            });
+            const data = await r.json();
+            r.ok ? add('assistant', data.reply, data.sources)
+                 : add('assistant', data.error || 'Error inesperado');
+          } catch (err) {
+            add('assistant', 'Error de red, intenta de nuevo.');
+          } finally {
+            btn.disabled = false;
+            input.focus();
+          }
+        });
+      </script>
     {% else %}
-      <p class="chat-empty">Crea un chat nuevo para empezar.</p>
+      <p>Crea un chat para comenzar.</p>
     {% endif %}
-  </main>
+  </section>
 </div>
 {% endblock %}

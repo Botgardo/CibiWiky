@@ -137,3 +137,16 @@ main > form input[type="submit"]:hover { filter: brightness(0.92); }
   background: #fdecea;
   color: #7a1f16;
 }
+
+.layout { display: flex; gap: 1rem; min-height: 70vh; }
+.sidebar { width: 240px; flex-shrink: 0; border-right: 1px solid #ccc; padding-right: 1rem; }
+.sidebar ul { list-style: none; padding: 0; }
+.sidebar li.active a { font-weight: bold; }
+.chat { flex: 1; display: flex; flex-direction: column; }
+#messages { flex: 1; overflow-y: auto; max-height: 65vh; }
+.msg { margin: .5rem 0; padding: .5rem .75rem; border-radius: 6px; }
+.msg.user { background: #e8f0fe; }
+.msg.assistant { background: #f4f4f4; }
+.msg p { white-space: pre-wrap; margin: 0 0 .25rem; }
+#f { display: flex; gap: .5rem; margin-top: .5rem; }
+#f input { flex: 1; }
