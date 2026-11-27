@@ -1,38 +1,37 @@
 {% extends 'base.html' %}
 {% block title %}Inicio{% endblock %}
 
-
 {% block content %}
-{#
-{% for post in posts %}
-<article class="post">
-  <header>
-    <div>
-      <h1>{{ post['title'] }}</h1>
-      <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
-    </div>
-    {% if g.user['id'] == post['author_id'] %}
-    <a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
-    {% endif %}
-  </header>
-  <p class="body">{{ post['body'] }}</p>
-</article>
-{% if not loop.last %}
-<hr>
-{% endif %}
-{% endfor %}
-#}
-
 <section class="hero">
-  <h1>Resuelve tus dudas de ciberseguridad con un asistente especializado</h1>
-  <p class="lead">
-    CibiWiky responde preguntas sobre amenazas, redes, vulnerabilidades y buenas
-    prácticas usando una base de conocimiento propia.
-  </p>
-  <div class="actions">
-    <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Crear cuenta</a>
-    <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Ya tengo cuenta</a>
+  <div class="hero-copy">
+    <h1>Resuelve tus dudas de ciberseguridad, con las fuentes a la vista</h1>
+    <p class="lead">
+      CibiWiky responde preguntas sobre amenazas, redes, vulnerabilidades y buenas
+      prácticas usando una base de conocimiento propia.
+    </p>
+    <div class="actions">
+      {% if g.user %}
+      <a class="btn btn-solid" href="{{ url_for('chat.chat') }}">Ir a mis chats</a>
+      {% else %}
+      <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Crear cuenta</a>
+      <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Ya tengo cuenta</a>
+      {% endif %}
+    </div>
   </div>
+
+  <figure class="sample">
+    <div class="sample-thread">
+      <div class="msg user"><p>¿Cómo prevengo una inyección SQL?</p></div>
+      <div class="msg assistant">
+        <p>Usa consultas parametrizadas en lugar de concatenar texto del usuario dentro de la consulta<span class="mk" style="--i:0">1</span>. Valida la entrada y dale a la cuenta de la base de datos solo los permisos que necesita<span class="mk" style="--i:1">2</span>.</p>
+        <ol class="sources" aria-label="Fuentes">
+          <li><span class="src"><span class="mk" style="--i:0">1</span><span class="src-title">SQL Injection Prevention Cheat Sheet</span></span></li>
+          <li><span class="src"><span class="mk" style="--i:1">2</span><span class="src-title">CWE-89: SQL Injection</span></span></li>
+        </ol>
+      </div>
+    </div>
+    <figcaption>Así se ve una respuesta: cada afirmación apunta a su fuente.</figcaption>
+  </figure>
 </section>
 
 <section class="info">
@@ -46,7 +45,7 @@
   </div>
   <div>
     <h2>Gratis para estudiantes</h2>
-    <p>Regístrate con tu correo y empieza a preguntar en menos de un minuto.</p>
+    <p>Crea tu usuario y empieza a preguntar en menos de un minuto.</p>
   </div>
 </section>
 {% endblock %}

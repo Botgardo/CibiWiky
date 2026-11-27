@@ -1,36 +1,93 @@
 {% extends 'base.html' %}
+{% block title %}{{ chat['title'] if chat else 'Chats' }}{% endblock %}
+{% block body_class %}page-chat{% endblock %}
 
 {% block content %}
-<div class="layout">
+<div class="chat-layout">
+  <input type="checkbox" id="nav-toggle" class="nav-toggle visually-hidden">
   {% include 'chat/_sidebar.html' %}
+  <label for="nav-toggle" class="scrim" aria-hidden="true"></label>
 
-  <section class="chat">
+  <section class="conversation">
+    <div class="conv-top">
+      <label for="nav-toggle" class="burger" aria-label="Mostrar u ocultar chats">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+      </label>
+      <h1 class="conv-title">{{ chat['title'] if chat else 'Chats' }}</h1>
+    </div>
+
     {% if chat %}
-      <div id="messages">
+      <div id="messages" role="log" aria-live="polite" aria-label="Conversación">
         {% for m in messages %}
           <div class="msg {{ m.role }}">
             <p>{{ m.content }}</p>
             {% if m.sources %}
-              <small>Fuentes:
+              <ol class="sources" aria-label="Fuentes">
                 {% for s in m.sources %}
-                  <a href="{{ s.url }}" target="_blank" rel="noopener">[{{ s.n }}] {{ s.title }}</a>
+                  <li><a class="src" data-n="{{ s.n }}" href="{{ s.url }}" target="_blank" rel="noopener"><span class="mk">{{ s.n }}</span><span class="src-title">{{ s.title }}</span></a></li>
                 {% endfor %}
-              </small>
+              </ol>
             {% endif %}
           </div>
         {% endfor %}
+
+        {% if not messages %}
+          <div class="empty" id="empty">
+            <h2>Pregunta sobre ciberseguridad</h2>
+            <p>Las respuestas salen de la base de conocimiento y citan sus fuentes.</p>
+            <div class="suggestions">
+              <button type="button" class="chip">¿Cómo prevengo una inyección SQL?</button>
+              <button type="button" class="chip">¿Qué es el OWASP Top 10?</button>
+              <button type="button" class="chip">Diferencia entre XSS reflejado y almacenado</button>
+              <button type="button" class="chip">¿Cómo funciona un ataque de fuerza bruta?</button>
+            </div>
+          </div>
+        {% endif %}
       </div>
 
-      <form id="f">
-        <input id="q" maxlength="2000" autocomplete="off" placeholder="Pregunta sobre OWASP Top 10 2025..." required>
-        <button id="btn">Enviar</button>
-      </form>
+      <div class="composer-wrap">
+        <form id="f" class="composer">
+          <label for="q" class="visually-hidden">Tu pregunta</label>
+          <textarea id="q" rows="1" maxlength="2000" autocomplete="off"
+                    placeholder="Pregunta sobre OWASP Top 10 2025..." required></textarea>
+          <button id="btn" class="send" type="submit" aria-label="Enviar pregunta">
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 14V4M4.5 8.5 9 4l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <p class="composer-hint">Enter envía. Shift + Enter agrega una línea.</p>
+      </div>
 
       <script>
         const box = document.getElementById('messages');
         const form = document.getElementById('f');
         const input = document.getElementById('q');
         const btn = document.getElementById('btn');
+
+        /* Convierte [n] en marcadores de evidencia que apuntan a su fuente. */
+        function decorate(msg) {
+          const p = msg.querySelector('p');
+          if (!p) return;
+          const urls = {};
+          msg.querySelectorAll('.sources a[data-n]').forEach(a => { urls[a.dataset.n] = a.href; });
+          const text = p.textContent.replace(/\s+(\[\d+\])/g, '$1');
+          if (!/\[\d+\]/.test(text)) return;
+          p.textContent = '';
+          text.split(/(\[\d+\])/).forEach(part => {
+            const m = part.match(/^\[(\d+)\]$/);
+            if (m && urls[m[1]]) {
+              const a = document.createElement('a');
+              a.className = 'mk';
+              a.href = urls[m[1]];
+              a.target = '_blank';
+              a.rel = 'noopener';
+              a.textContent = m[1];
+              a.setAttribute('aria-label', 'Fuente ' + m[1]);
+              p.appendChild(a);
+            } else {
+              p.append(part);
+            }
+          });
+        }
 
         function add(role, text, sources = []) {
           const d = document.createElement('div');
@@ -39,27 +96,73 @@
           p.textContent = text;                 // textContent: evita XSS
           d.appendChild(p);
           if (sources.length) {
-            const s = document.createElement('small');
-            s.append('Fuentes: ');
+            const ol = document.createElement('ol');
+            ol.className = 'sources';
+            ol.setAttribute('aria-label', 'Fuentes');
             sources.forEach(x => {
+              const li = document.createElement('li');
               const a = document.createElement('a');
+              a.className = 'src';
+              a.dataset.n = x.n;
               a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
-              a.textContent = `[${x.n}] ${x.title} `;
-              s.appendChild(a);
+              const mk = document.createElement('span');
+              mk.className = 'mk';
+              mk.textContent = x.n;
+              const t = document.createElement('span');
+              t.className = 'src-title';
+              t.textContent = x.title;
+              a.append(mk, t);
+              li.appendChild(a);
+              ol.appendChild(li);
             });
-            d.appendChild(s);
+            d.appendChild(ol);
           }
           box.appendChild(d);
+          if (role === 'assistant') decorate(d);
           box.scrollTop = box.scrollHeight;
+          return d;
         }
+
+        function addPending() {
+          const d = document.createElement('div');
+          d.className = 'msg assistant pending';
+          d.innerHTML = '<p>Consultando la base de conocimiento<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></p>';
+          box.appendChild(d);
+          box.scrollTop = box.scrollHeight;
+          return d;
+        }
+
+        function grow() {
+          input.style.height = 'auto';
+          input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+        }
+        input.addEventListener('input', grow);
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+            e.preventDefault();
+            form.requestSubmit();
+          }
+        });
+
+        document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+          input.value = c.textContent;
+          form.requestSubmit();
+        }));
+
+        box.querySelectorAll('.msg.assistant').forEach(decorate);
+        box.scrollTop = box.scrollHeight;
 
         form.addEventListener('submit', async e => {
           e.preventDefault();
           const text = input.value.trim();
           if (!text) return;
+          const empty = document.getElementById('empty');
+          if (empty) empty.remove();
           add('user', text);
           input.value = '';
+          grow();
           btn.disabled = true;
+          const pending = addPending();
           try {
             const r = await fetch("{{ url_for('chat.send', chat_id=chat['id']) }}", {
               method: 'POST',
@@ -67,9 +170,11 @@
               body: JSON.stringify({message: text})
             });
             const data = await r.json();
+            pending.remove();
             r.ok ? add('assistant', data.reply, data.sources)
                  : add('assistant', data.error || 'Error inesperado');
           } catch (err) {
+            pending.remove();
             add('assistant', 'Error de red, intenta de nuevo.');
           } finally {
             btn.disabled = false;
@@ -78,7 +183,15 @@
         });
       </script>
     {% else %}
-      <p>Crea un chat para comenzar.</p>
+      <div id="messages">
+        <div class="empty">
+          <h2>Aún no tienes chats</h2>
+          <p>Crea uno para hacer tu primera pregunta.</p>
+          <form method="post" action="{{ url_for('chat.new') }}">
+            <button type="submit" class="btn btn-solid">Nuevo chat</button>
+          </form>
+        </div>
+      </div>
     {% endif %}
   </section>
 </div>
